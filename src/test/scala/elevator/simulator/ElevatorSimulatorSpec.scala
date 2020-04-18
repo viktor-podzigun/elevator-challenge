@@ -91,4 +91,36 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
       (ElevatorId(1), FloorNumber(-1), Down, List(FloorNumber(-2)))
     )
   }
+  
+  it should "change direction from Down to Up and move to the next floor" in {
+    //given
+    val simulator = ElevatorSimulator(List(
+      (ElevatorId(1), FloorNumber(0), Down, List(FloorNumber(2)))
+    ))
+    
+    //when
+    val result = simulator.step()
+    
+    //then
+    result should not be theSameInstanceAs(simulator)
+    result.status shouldBe List(
+      (ElevatorId(1), FloorNumber(1), Up, List(FloorNumber(2)))
+    )
+  }
+  
+  it should "change direction from Up to Down and move to the next floor" in {
+    //given
+    val simulator = ElevatorSimulator(List(
+      (ElevatorId(1), FloorNumber(0), Up, List(FloorNumber(-2)))
+    ))
+    
+    //when
+    val result = simulator.step()
+    
+    //then
+    result should not be theSameInstanceAs(simulator)
+    result.status shouldBe List(
+      (ElevatorId(1), FloorNumber(-1), Down, List(FloorNumber(-2)))
+    )
+  }
 }

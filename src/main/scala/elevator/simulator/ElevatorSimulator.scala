@@ -1,6 +1,6 @@
 package elevator.simulator
 
-import elevator.simulator.Direction.Up
+import elevator.simulator.Direction.{Down, Up}
 
 class ElevatorSimulator private(val status: List[(ElevatorId, FloorNumber, Direction, Seq[FloorNumber])],
                                 pickupQueue: List[(FloorNumber, FloorNumber)] = Nil)
@@ -14,14 +14,15 @@ class ElevatorSimulator private(val status: List[(ElevatorId, FloorNumber, Direc
     if (pickupQueue.isEmpty && status.forall(_._4.isEmpty)) this
     else {
       val (resStatus, resQueue) = {
-        status.foldLeft((List.empty[(ElevatorId, FloorNumber, Direction, Seq[FloorNumber])], pickupQueue)) {
-          case ((res, pickups), (id, currFloor, direction, goalFloors)) =>
-            val (resFloor, resDirection, resGoalFloors, resPickups) = move(currFloor, direction, goalFloors, pickups)
-            (res :+ Tuple4(id, resFloor, resDirection, resGoalFloors), resPickups)
+        val resStatus = List.empty[(ElevatorId, FloorNumber, Direction, Seq[FloorNumber])]
+        
+        status.foldLeft((resStatus, pickupQueue)) { case ((res, pickups), (id, currFloor, direction, goalFloors)) =>
+          val (resFloor, resDirection, resGoalFloors, resPickups) = move(currFloor, direction, goalFloors, pickups)
+          ((id, resFloor, resDirection, resGoalFloors) :: res, resPickups)
         }
       }
 
-      new ElevatorSimulator(resStatus, resQueue)
+      new ElevatorSimulator(resStatus.reverse, resQueue)
     }
   }
   
@@ -31,10 +32,23 @@ class ElevatorSimulator private(val status: List[(ElevatorId, FloorNumber, Direc
                    pickups: List[(FloorNumber, FloorNumber)]
                   ): (FloorNumber, Direction, Seq[FloorNumber], List[(FloorNumber, FloorNumber)]) = {
 
-    if (direction == Up) {
-      (FloorNumber(currFloor.value + 1), direction, goalFloors, pickups)
-    } else {
-      (FloorNumber(currFloor.value - 1), direction, goalFloors, pickups)
+    if (goalFloors.isEmpty) (currFloor, direction, goalFloors, pickups)
+    else {
+      val resDirection = {
+        val minFloor = goalFloors.minBy(_.value)
+        val maxFloor = goalFloors.maxBy(_.value)
+
+        if (direction == Up && maxFloor.value < currFloor.value) Down
+        else if (direction == Down && minFloor.value > currFloor.value) Up
+        else direction
+      }
+
+      if (resDirection == Up) {
+        (FloorNumber(currFloor.value + 1), resDirection, goalFloors, pickups)
+      }
+      else {
+        (FloorNumber(currFloor.value - 1), resDirection, goalFloors, pickups)
+      }
     }
   }
 }

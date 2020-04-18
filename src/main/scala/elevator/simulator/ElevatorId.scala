@@ -1,6 +1,6 @@
 package elevator.simulator
 
-class ElevatorId private(val value: Int) extends AnyVal
+case class ElevatorId private(value: Int) extends AnyVal
 
 object ElevatorId {
 
