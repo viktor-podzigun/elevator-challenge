@@ -1,6 +1,6 @@
 package elevator.simulator
 
-class ElevatorSimulator private(val status: List[(ElevatorId, FloorNumber, Seq[FloorNumber])],
+class ElevatorSimulator private(val status: List[(ElevatorId, FloorNumber, Direction, Seq[FloorNumber])],
                                 pickupQueue: List[(FloorNumber, FloorNumber)] = Nil)
   extends ElevatorControlSystem {
   
@@ -8,12 +8,25 @@ class ElevatorSimulator private(val status: List[(ElevatorId, FloorNumber, Seq[F
     new ElevatorSimulator(status, (pickupFloor, goalFloor) :: pickupQueue)
   }
 
-  def step(): ElevatorControlSystem = ???
+  def step(): ElevatorControlSystem = {
+    if (pickupQueue.isEmpty && status.forall(_._4.isEmpty)) this
+    else {
+      ???
+    }
+  }
+  
+//  private def move(id: ElevatorId,
+//                   currFloor: FloorNumber,
+//                   goalFloors: Seq[FloorNumber],
+//                   pickupQueue: List[(FloorNumber, FloorNumber)]
+//                  ): (FloorNumber, Seq[FloorNumber], List[(FloorNumber, FloorNumber)]) = {
+//    ???
+//  }
 }
 
 object ElevatorSimulator {
 
-  def apply(initialState: Seq[(ElevatorId, FloorNumber, Seq[FloorNumber])]): ElevatorSimulator = {
+  def apply(initialState: Seq[(ElevatorId, FloorNumber, Direction, Seq[FloorNumber])]): ElevatorSimulator = {
     require(initialState.nonEmpty, "at least one elevator should be provided")
     
     new ElevatorSimulator(initialState.toList)

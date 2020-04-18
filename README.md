@@ -19,7 +19,7 @@ Elevator simulation interface is the following:
 ```scala
 trait ElevatorControlSystem {
 
-  def status(): Seq[(ElevatorId, FloorNumber, Seq[FloorNumber])]
+  def status(): Seq[(ElevatorId, FloorNumber, Direction, Seq[FloorNumber])]
 
   def pickup(pickupFloor: FloorNumber, goalFloor: FloorNumber): ElevatorControlSystem
 
@@ -65,8 +65,8 @@ is the following:
 To set initial state - call `ElevatorSimulator` constructor:
 ```scala
 val controlSystem = ElevatorSimulator(List(
-  (ElevatorId(1), FloorNumber(0), List(FloorNumber(1))),
-  (ElevatorId(2), FloorNumber(-1), List(FloorNumber(2)))
+  (ElevatorId(1), FloorNumber(0), Up, List(FloorNumber(1))),
+  (ElevatorId(2), FloorNumber(-1), Down, List(FloorNumber(-2))),
   ...
 ))
 ```
