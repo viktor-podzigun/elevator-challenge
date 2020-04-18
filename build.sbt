@@ -1,8 +1,4 @@
 
-// put here until this issue is resolved:
-//  https://github.com/sbt/sbt/issues/5043
-ThisBuild / useCoursier := false
-
 val ideExcludedDirectories = SettingKey[Seq[File]]("ide-excluded-directories")
 
 lazy val `elevator-challenge` = (project in file("."))

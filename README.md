@@ -7,7 +7,7 @@ elevator coding challenge
 
 ### How to build/run it
 
-To build and run all the tests use the following command:
+To build and run all tests use the following command:
 ```bash
 sbt test
 ```
