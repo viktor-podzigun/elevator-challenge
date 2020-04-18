@@ -2,9 +2,9 @@ package elevator.simulator
 
 trait ElevatorControlSystem {
 
-  def status(): Seq[(Int, Int, Int)]
+  def status(): Seq[(ElevatorId, FloorNumber, Seq[FloorNumber])]
 
-  def pickup(floor: Int, direction: Int)
+  def pickup(pickupFloor: FloorNumber, goalFloor: FloorNumber): Unit
 
-  def step()
+  def step(): Unit
 }
