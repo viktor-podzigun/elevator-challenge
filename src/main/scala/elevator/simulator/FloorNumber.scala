@@ -1,6 +1,6 @@
 package elevator.simulator
 
-case class FloorNumber private(value: Int) extends AnyVal
+class FloorNumber private(val value: Int) extends AnyVal
 
 object FloorNumber {
 

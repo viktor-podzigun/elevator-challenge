@@ -5,7 +5,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class ElevatorSimulatorSpec extends FlatSpec with Matchers {
 
-  it should "fail if no elevators are provided" in {
+  "constructor" should "fail if no elevators are provided" in {
     //when
     val e = the[IllegalArgumentException] thrownBy {
       ElevatorSimulator(Nil)
@@ -30,7 +30,7 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
     result.status shouldBe initialState
   }
   
-  it should "return new instance, but not change status when pickup" in {
+  "pickup" should "return new instance, but not change status" in {
     //given
     val simulator = ElevatorSimulator(List(
       (ElevatorId(1), FloorNumber(0), Up, List(FloorNumber(1))),
@@ -60,7 +60,7 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
     result.status shouldBe simulator.status
   }
   
-  ignore should "simulate move to the next floor" in {
+  it should "simulate move Up to the next floor" in {
     //given
     val simulator = ElevatorSimulator(List(
       (ElevatorId(1), FloorNumber(0), Up, List(FloorNumber(2)))
@@ -72,7 +72,23 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
     //then
     result should not be theSameInstanceAs(simulator)
     result.status shouldBe List(
-      (ElevatorId(1), FloorNumber(1), List(FloorNumber(2)))
+      (ElevatorId(1), FloorNumber(1), Up, List(FloorNumber(2)))
+    )
+  }
+  
+  it should "simulate move Down to the next floor" in {
+    //given
+    val simulator = ElevatorSimulator(List(
+      (ElevatorId(1), FloorNumber(0), Down, List(FloorNumber(-2)))
+    ))
+    
+    //when
+    val result = simulator.step()
+    
+    //then
+    result should not be theSameInstanceAs(simulator)
+    result.status shouldBe List(
+      (ElevatorId(1), FloorNumber(-1), Down, List(FloorNumber(-2)))
     )
   }
 }
