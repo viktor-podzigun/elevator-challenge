@@ -4,7 +4,7 @@ trait ElevatorControlSystem {
 
   def status(): Seq[(ElevatorId, FloorNumber, Seq[FloorNumber])]
 
-  def pickup(pickupFloor: FloorNumber, goalFloor: FloorNumber): Unit
+  def pickup(pickupFloor: FloorNumber, goalFloor: FloorNumber): ElevatorControlSystem
 
-  def step(): Unit
+  def step(): ElevatorControlSystem
 }

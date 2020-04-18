@@ -4,9 +4,9 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class ElevatorIdSpec extends FlatSpec with Matchers {
 
-  it should "fail if ElevatorId < 0" in {
+  it should "fail if ElevatorId <= 0" in {
     //given
-    val id = -1
+    val id = 0
 
     //when
     val e = the[IllegalArgumentException] thrownBy {
@@ -14,12 +14,12 @@ class ElevatorIdSpec extends FlatSpec with Matchers {
     }
     
     //then
-    e.getMessage shouldBe "requirement failed: ElevatorId should be > 0"
+    e.getMessage shouldBe "requirement failed: ElevatorId should be between 1 and 16"
   }
   
-  it should "fail if ElevatorId = 0" in {
+  it should "fail if ElevatorId > maxId" in {
     //given
-    val id = 0
+    val id = 17
     
     //when
     val e = the[IllegalArgumentException] thrownBy {
@@ -27,7 +27,7 @@ class ElevatorIdSpec extends FlatSpec with Matchers {
     }
     
     //then
-    e.getMessage shouldBe "requirement failed: ElevatorId should be > 0"
+    e.getMessage shouldBe "requirement failed: ElevatorId should be between 1 and 16"
   }
   
   it should "create ElevatorId" in {
