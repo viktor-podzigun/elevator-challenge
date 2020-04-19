@@ -18,13 +18,10 @@ case class ElevatorSimulator private(status: List[(ElevatorId, FloorNumber, Dire
       case res => res
     }
     
-    val newPickups =
-      if (!pickups.contains(pickupFloor)) pickups + (pickupFloor -> Set(goalFloor))
-      else pickups.map {
-        case (pickup, goals) if pickup == pickupFloor =>
-          (pickup, goals + goalFloor)
-        case res => res
-      }
+    val newPickups = {
+      val goals = pickups.getOrElse(pickupFloor, Set.empty)
+      pickups.updated(pickupFloor, goals + goalFloor)
+    }
     
     copy(newStatus, newPickups)
   }
@@ -89,18 +86,19 @@ object ElevatorSimulator {
       val elevatorDirection = ensureDirection(currFloor, direction, goalFloors)
       isSameDirection(pickupDirection, elevatorDirection, goalFloors)
     }
+    
+    def getDistance(floor1: FloorNumber, floor2: FloorNumber): Int = {
+      math.abs(floor1.value - floor2.value)
+    }
 
     val sameDirSorted = sameDir.map { case (id, currFloor, _, _) =>
-      val distance = math.abs(currFloor.value - pickupFloor.value)
-      (id, distance)
+      (id, getDistance(currFloor, pickupFloor))
     }.sortBy(_._2)
 
     val (elevatorId, _) = sameDirSorted.headOption.getOrElse {
       val oppositeDirSorted = oppositeDir.map { case (id, _, _, goalFloors) =>
-        val distance = goalFloors.map { goalFloor =>
-          math.abs(goalFloor.value - pickupFloor.value)
-        }.max
-        (id, distance)
+        val maxDistance = goalFloors.map(getDistance(_, pickupFloor)).max
+        (id, maxDistance)
       }.sortBy(_._2)
 
       oppositeDirSorted.head
@@ -117,13 +115,16 @@ object ElevatorSimulator {
     if (goalFloors.isEmpty && pickups.isEmpty) (currFloor, direction, goalFloors, pickups)
     else {
       val resDirection = ensureDirection(currFloor, direction, goalFloors)
+      val nextFloor = 
+        if (resDirection == Up) FloorNumber(currFloor.value + 1)
+        else FloorNumber(currFloor.value - 1)
 
-      if (resDirection == Up) {
-        (FloorNumber(currFloor.value + 1), resDirection, goalFloors, pickups)
+      val (newGoals, newPickups) = pickups.get(nextFloor) match {
+        case None => (Set.empty[FloorNumber], pickups)
+        case Some(goals) => (goals, pickups - nextFloor)
       }
-      else {
-        (FloorNumber(currFloor.value - 1), resDirection, goalFloors, pickups)
-      }
+      
+      (nextFloor, resDirection, goalFloors ++ newGoals - nextFloor, newPickups)
     }
   }
 }

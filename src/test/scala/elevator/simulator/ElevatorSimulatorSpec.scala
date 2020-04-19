@@ -29,6 +29,7 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
     
     //then
     result.status shouldBe initialState
+    result.pickups shouldBe Map.empty
   }
   
   "getDirection" should "return direction based on pickupFloor and goalFloor" in {
@@ -170,92 +171,165 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
     )
   }
   
+  "move" should "do nothing if no goal floors and no pickup requests" in {
+    //given
+    val currFloor = FloorNumber(1)
+    val direction = Up
+    val goalFloors = Set.empty[FloorNumber]
+    val pickups = Map.empty[FloorNumber, Set[FloorNumber]]
+    
+    //when
+    val (resFloor, resDirection, resGoals, resPickups) =
+      move(currFloor, direction, goalFloors, pickups)
+    
+    //then
+    resFloor shouldBe currFloor
+    resDirection shouldBe direction
+    resGoals shouldBe goalFloors
+    resPickups shouldBe pickups
+  }
+  
+  it should "move Up to the next floor" in {
+    //given
+    val currFloor = FloorNumber(0)
+    val direction = Up
+    val goalFloors = Set(FloorNumber(2))
+    val pickups = Map.empty[FloorNumber, Set[FloorNumber]]
+    
+    //when
+    val (resFloor, resDirection, resGoals, resPickups) =
+      move(currFloor, direction, goalFloors, pickups)
+    
+    //then
+    resFloor shouldBe FloorNumber(1)
+    resDirection shouldBe direction
+    resGoals shouldBe goalFloors
+    resPickups shouldBe pickups
+  }
+  
+  it should "move Down to the next floor" in {
+    //given
+    val currFloor = FloorNumber(0)
+    val direction = Down
+    val goalFloors = Set(FloorNumber(-2))
+    val pickups = Map.empty[FloorNumber, Set[FloorNumber]]
+    
+    //when
+    val (resFloor, resDirection, resGoals, resPickups) =
+      move(currFloor, direction, goalFloors, pickups)
+    
+    //then
+    resFloor shouldBe FloorNumber(-1)
+    resDirection shouldBe direction
+    resGoals shouldBe goalFloors
+    resPickups shouldBe pickups
+  }
+  
+  it should "move and change direction from Down to Up" in {
+    //given
+    val currFloor = FloorNumber(0)
+    val direction = Down
+    val goalFloors = Set(FloorNumber(2))
+    val pickups = Map.empty[FloorNumber, Set[FloorNumber]]
+    
+    //when
+    val (resFloor, resDirection, resGoals, resPickups) =
+      move(currFloor, direction, goalFloors, pickups)
+    
+    //then
+    resFloor shouldBe FloorNumber(1)
+    resDirection shouldBe Up
+    resGoals shouldBe goalFloors
+    resPickups shouldBe pickups
+  }
+  
+  it should "move and change direction from Up to Down" in {
+    //given
+    val currFloor = FloorNumber(0)
+    val direction = Up
+    val goalFloors = Set(FloorNumber(-2))
+    val pickups = Map.empty[FloorNumber, Set[FloorNumber]]
+    
+    //when
+    val (resFloor, resDirection, resGoals, resPickups) =
+      move(currFloor, direction, goalFloors, pickups)
+    
+    //then
+    resFloor shouldBe FloorNumber(-1)
+    resDirection shouldBe Down
+    resGoals shouldBe goalFloors
+    resPickups shouldBe pickups
+  }
+  
+  it should "move Up to the next floor and pick up/drop off" in {
+    //given
+    val currFloor = FloorNumber(0)
+    val direction = Up
+    val goalFloors = Set(FloorNumber(1))
+    val pickups = Map(
+      FloorNumber(0) -> Set(FloorNumber(1)),
+      FloorNumber(1) -> Set(FloorNumber(2))
+    )
+
+    //when
+    val (resFloor, resDirection, resGoals, resPickups) =
+      move(currFloor, direction, goalFloors, pickups)
+
+    //then
+    resFloor shouldBe FloorNumber(1)
+    resDirection shouldBe direction
+    resGoals shouldBe Set(FloorNumber(2))
+    resPickups shouldBe Map(
+      FloorNumber(0) -> Set(FloorNumber(1))
+    )
+  }
+
+  it should "move Down to the next floor and pick up/drop off" in {
+    //given
+    val currFloor = FloorNumber(0)
+    val direction = Down
+    val goalFloors = Set(FloorNumber(-1))
+    val pickups = Map(
+      FloorNumber(0) -> Set(FloorNumber(-1)),
+      FloorNumber(-1) -> Set(FloorNumber(-2))
+    )
+
+    //when
+    val (resFloor, resDirection, resGoals, resPickups) =
+      move(currFloor, direction, goalFloors, pickups)
+
+    //then
+    resFloor shouldBe FloorNumber(-1)
+    resDirection shouldBe direction
+    resGoals shouldBe Set(FloorNumber(-2))
+    resPickups shouldBe Map(
+      FloorNumber(0) -> Set(FloorNumber(-1))
+    )
+  }
+
   "step" should "do nothing if no goal floors and no pickup requests" in {
     //given
     val simulator = ElevatorSimulator(List(
       (ElevatorId(1), FloorNumber(0), Up, Set.empty),
       (ElevatorId(2), FloorNumber(1), Down, Set.empty)
     ))
-    
+    simulator.pickups shouldBe Map.empty
+
     //when
     val result = simulator.step()
-    
+
     //then
     result should be theSameInstanceAs simulator
     result.status shouldBe simulator.status
   }
-  
-  it should "simulate move Up to the next floor" in {
-    //given
-    val simulator = ElevatorSimulator(List(
-      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(2)))
-    ))
-    
-    //when
-    val result = simulator.step()
-    
-    //then
-    result should not be theSameInstanceAs(simulator)
-    result.status shouldBe List(
-      (ElevatorId(1), FloorNumber(1), Up, Set(FloorNumber(2)))
-    )
-  }
-  
-  it should "simulate move Down to the next floor" in {
-    //given
-    val simulator = ElevatorSimulator(List(
-      (ElevatorId(1), FloorNumber(0), Down, Set(FloorNumber(-2)))
-    ))
-    
-    //when
-    val result = simulator.step()
-    
-    //then
-    result should not be theSameInstanceAs(simulator)
-    result.status shouldBe List(
-      (ElevatorId(1), FloorNumber(-1), Down, Set(FloorNumber(-2)))
-    )
-  }
-  
-  it should "change direction from Down to Up and move to the next floor" in {
-    //given
-    val simulator = ElevatorSimulator(List(
-      (ElevatorId(1), FloorNumber(0), Down, Set(FloorNumber(2)))
-    ))
-    
-    //when
-    val result = simulator.step()
-    
-    //then
-    result should not be theSameInstanceAs(simulator)
-    result.status shouldBe List(
-      (ElevatorId(1), FloorNumber(1), Up, Set(FloorNumber(2)))
-    )
-  }
-  
-  it should "change direction from Up to Down and move to the next floor" in {
-    //given
-    val simulator = ElevatorSimulator(List(
-      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(-2)))
-    ))
-    
-    //when
-    val result = simulator.step()
-    
-    //then
-    result should not be theSameInstanceAs(simulator)
-    result.status shouldBe List(
-      (ElevatorId(1), FloorNumber(-1), Down, Set(FloorNumber(-2)))
-    )
-  }
-  
-  ignore should "pick person when going Up if same direction" in {
+
+  it should "pick person when going Up with same direction" in {
     //given
     val simulator = ElevatorSimulator(List(
       (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(2)))
     )).pickup(FloorNumber(1), FloorNumber(3))
     simulator.status shouldBe List(
-      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(2), FloorNumber(3)))
+      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2)))
     )
     simulator.pickups shouldBe Map(
       FloorNumber(1) -> Set(FloorNumber(3))
@@ -266,20 +340,23 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
     result1.status shouldBe List(
       (ElevatorId(1), FloorNumber(1), Up, Set(FloorNumber(2), FloorNumber(3)))
     )
+    result1.pickups shouldBe Map.empty
     
     //when & then
     val result2 = result1.step()
     result2.status shouldBe List(
       (ElevatorId(1), FloorNumber(2), Up, Set(FloorNumber(3)))
     )
+    result2.pickups shouldBe Map.empty
     
     //when & then
     val result3 = result2.step()
     result3.status shouldBe List(
       (ElevatorId(1), FloorNumber(3), Up, Set.empty)
     )
+    result3.pickups shouldBe Map.empty
     
     //finish
-    result2.step() should be theSameInstanceAs result2
+    result3.step() should be theSameInstanceAs result3
   }
 }
