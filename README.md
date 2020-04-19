@@ -75,3 +75,36 @@ val controlSystem = ElevatorSimulator(List(
 * `FloorNumber` should be between `-9` and `9`
 * for simplicity elevators has `unlimited` capacity
   (number of people)
+
+### How it's implemented
+
+#### The Challenge
+
+Then challenge is to schedule and process the pickup requests.
+There are few different options, though:
+
+1. First requests handled first, `FCFS` (first-come, first-served).
+   But, it may lead to both:
+   * inefficient elevator usage, and
+   * delays of requests
+   
+   Elevators may go to the far floors first, ignoring more close
+   but less priority requests.
+
+2. Schedule requests for elevators that are:
+   * the closest to the pickup floor, and
+   * going the same direction has a priority
+
+Ofcourse there are many other possible options and optimisations.
+They are not considered here for the simplicity of the solution.
+
+#### The Solution
+
+For handling request in more natural and good enough way,
+the `2nd` option was chosen.
+
+The pickup requests are scheduled at the `moment of pickup request`,
+by adding `pickupFloor` to the `goalFloors` of the `closest`
+elevator with giving priority to the elevators going
+the `same direction` as `pickup direction`.
+

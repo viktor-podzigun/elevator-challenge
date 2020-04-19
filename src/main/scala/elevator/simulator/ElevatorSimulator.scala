@@ -8,7 +8,38 @@ case class ElevatorSimulator private(status: List[(ElevatorId, FloorNumber, Dire
   extends ElevatorControlSystem {
   
   def pickup(pickupFloor: FloorNumber, goalFloor: FloorNumber): ElevatorSimulator = {
-    copy(status, pickups + (pickupFloor -> goalFloor))
+    require(pickupFloor != goalFloor, "pickupFloor and goalFloor cannot be the same")
+    
+    val pickupDirection = getDirection(pickupFloor, goalFloor)
+    
+    val (sameDir, oppositeDir) = status.partition { case (_, currFloor, direction, goalFloors) =>
+      val elevatorDirection = ensureDirection(currFloor, direction, goalFloors)
+      isSameDirection(pickupDirection, elevatorDirection, goalFloors)
+    }
+
+    val sameDirSorted = sameDir.map { case (id, currFloor, _, _) =>
+      val distance = math.abs(currFloor.value - pickupFloor.value)
+      (id, distance)
+    }.sortBy(_._2)
+
+    val (elevatorId, _) = sameDirSorted.headOption.getOrElse {
+      val oppositeDirSorted = oppositeDir.map { case (id, _, _, goalFloors) =>
+        val distance = goalFloors.map { goalFloor =>
+          math.abs(goalFloor.value - pickupFloor.value)
+        }.max
+        (id, distance)
+      }.sortBy(_._2)
+
+      oppositeDirSorted.head
+    }
+
+    val resStatus = status.map {
+      case (id, currFloor, direction, goalFloors) if id == elevatorId =>
+        (id, currFloor, direction, goalFloors + pickupFloor)
+      case res => res
+    }
+    
+    copy(resStatus, pickups + (pickupFloor -> goalFloor))
   }
 
   def step(): ElevatorSimulator = {
@@ -36,26 +67,20 @@ object ElevatorSimulator {
     new ElevatorSimulator(initialState.toList, Map.empty)
   }
 
-  def move(currFloor: FloorNumber,
-           direction: Direction,
-           goalFloors: Set[FloorNumber],
-           pickups: Map[FloorNumber, FloorNumber]
-          ): (FloorNumber, Direction, Set[FloorNumber], Map[FloorNumber, FloorNumber]) = {
-
-    if (goalFloors.isEmpty && pickups.isEmpty) (currFloor, direction, goalFloors, pickups)
-    else {
-      val resDirection = getDirection(currFloor, direction, goalFloors)
-
-      if (resDirection == Up) {
-        (FloorNumber(currFloor.value + 1), resDirection, goalFloors, pickups)
-      }
-      else {
-        (FloorNumber(currFloor.value - 1), resDirection, goalFloors, pickups)
-      }
-    }
+  def getDirection(pickupFloor: FloorNumber, goalFloor: FloorNumber): Direction = {
+    if (pickupFloor.value < goalFloor.value) Up
+    else Down
   }
 
-  def getDirection(currFloor: FloorNumber, direction: Direction, goalFloors: Set[FloorNumber]): Direction = {
+  def isSameDirection(pickupDirection: Direction,
+                      elevatorDirection: Direction,
+                      goalFloors: Set[FloorNumber]): Boolean = {
+
+    if (goalFloors.isEmpty) true
+    else pickupDirection == elevatorDirection
+  }
+
+  def ensureDirection(currFloor: FloorNumber, direction: Direction, goalFloors: Set[FloorNumber]): Direction = {
     if (goalFloors.isEmpty) direction
     else {
       val minFloor = goalFloors.minBy(_.value)
@@ -64,6 +89,25 @@ object ElevatorSimulator {
       if (direction == Up && maxFloor.value < currFloor.value) Down
       else if (direction == Down && minFloor.value > currFloor.value) Up
       else direction
+    }
+  }
+  
+  def move(currFloor: FloorNumber,
+           direction: Direction,
+           goalFloors: Set[FloorNumber],
+           pickups: Map[FloorNumber, FloorNumber]
+          ): (FloorNumber, Direction, Set[FloorNumber], Map[FloorNumber, FloorNumber]) = {
+
+    if (goalFloors.isEmpty && pickups.isEmpty) (currFloor, direction, goalFloors, pickups)
+    else {
+      val resDirection = ensureDirection(currFloor, direction, goalFloors)
+
+      if (resDirection == Up) {
+        (FloorNumber(currFloor.value + 1), resDirection, goalFloors, pickups)
+      }
+      else {
+        (FloorNumber(currFloor.value - 1), resDirection, goalFloors, pickups)
+      }
     }
   }
 }
