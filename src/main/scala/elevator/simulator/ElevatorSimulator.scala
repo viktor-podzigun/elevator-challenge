@@ -3,9 +3,11 @@ package elevator.simulator
 import elevator.simulator.Direction._
 import elevator.simulator.ElevatorSimulator._
 
-case class ElevatorSimulator private(status: List[(ElevatorId, FloorNumber, Direction, Set[FloorNumber])],
-                                     pickups: Map[FloorNumber, Set[FloorNumber]])
+case class ElevatorSimulator(status: List[(ElevatorId, FloorNumber, Direction, Set[FloorNumber])],
+                             pickups: Map[FloorNumber, Set[FloorNumber]] = Map.empty)
   extends ElevatorControlSystem {
+
+  require(status.nonEmpty, "at least one elevator should be provided")
   
   def pickup(pickupFloor: FloorNumber, goalFloor: FloorNumber): ElevatorSimulator = {
     require(pickupFloor != goalFloor, "pickupFloor and goalFloor cannot be the same")
@@ -45,12 +47,6 @@ case class ElevatorSimulator private(status: List[(ElevatorId, FloorNumber, Dire
 
 object ElevatorSimulator {
 
-  def apply(initialState: Seq[(ElevatorId, FloorNumber, Direction, Set[FloorNumber])]): ElevatorSimulator = {
-    require(initialState.nonEmpty, "at least one elevator should be provided")
-    
-    new ElevatorSimulator(initialState.toList, Map.empty)
-  }
-
   def getDirection(pickupFloor: FloorNumber, goalFloor: FloorNumber): Direction = {
     if (pickupFloor.value < goalFloor.value) Up
     else Down
@@ -64,7 +60,10 @@ object ElevatorSimulator {
     else pickupDirection == elevatorDirection
   }
 
-  def ensureDirection(currFloor: FloorNumber, direction: Direction, goalFloors: Set[FloorNumber]): Direction = {
+  def ensureDirection(currFloor: FloorNumber,
+                      direction: Direction,
+                      goalFloors: Set[FloorNumber]): Direction = {
+    
     if (goalFloors.isEmpty) direction
     else {
       val minFloor = goalFloors.minBy(_.value)

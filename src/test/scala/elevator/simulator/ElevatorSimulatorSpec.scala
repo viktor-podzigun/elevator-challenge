@@ -2,10 +2,19 @@ package elevator.simulator
 
 import elevator.simulator.Direction._
 import elevator.simulator.ElevatorSimulator._
+import org.scalactic.source.Position
 import org.scalatest.{FlatSpec, Matchers}
 
 class ElevatorSimulatorSpec extends FlatSpec with Matchers {
 
+  implicit class ElevatorSimulatorOps(simulator: ElevatorSimulator) {
+
+    def assertSimulator(expected: ElevatorSimulator)(implicit pos: Position): ElevatorSimulator = {
+      simulator shouldBe expected
+      simulator
+    }
+  }
+  
   "constructor" should "fail if no elevators are provided" in {
     //when
     val e = the[IllegalArgumentException] thrownBy {
@@ -122,25 +131,25 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
     e.getMessage shouldBe "requirement failed: pickupFloor and goalFloor cannot be the same"
   }
 
-  it should "add pickupFloor to goalFloors and return new instance" in {
+  it should "add pickupFloor to elevator's goalFloors" in {
     //given
     val simulator = ElevatorSimulator(List(
       (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
       (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1)))
     ))
-    simulator.pickups shouldBe Map.empty
     
     //when
     val result = simulator.pickup(FloorNumber(2), FloorNumber(3))
     
     //then
-    result should not be theSameInstanceAs(simulator)
-    result.status shouldBe List(
-      (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
-      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2)))
-    )
-    result.pickups shouldBe Map(
-      FloorNumber(2) -> Set(FloorNumber(3))
+    result shouldBe ElevatorSimulator(
+      status = List(
+        (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
+        (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2)))
+      ),
+      pickups = Map(
+        FloorNumber(2) -> Set(FloorNumber(3))
+      )
     )
   }
   
@@ -150,24 +159,29 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
       (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
       (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1)))
     )).pickup(FloorNumber(2), FloorNumber(3))
-    simulator.status shouldBe List(
-      (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
-      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2)))
-    )
-    simulator.pickups shouldBe Map(
-      FloorNumber(2) -> Set(FloorNumber(3))
+    
+    simulator shouldBe ElevatorSimulator(
+      status = List(
+        (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
+        (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2)))
+      ),
+      pickups = Map(
+        FloorNumber(2) -> Set(FloorNumber(3))
+      )
     )
     
     //when
     val result = simulator.pickup(FloorNumber(2), FloorNumber(4))
     
     //then
-    result.status shouldBe List(
-      (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
-      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2)))
-    )
-    result.pickups shouldBe Map(
-      FloorNumber(2) -> Set(FloorNumber(3), FloorNumber(4))
+    result shouldBe ElevatorSimulator(
+      status = List(
+        (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
+        (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2)))
+      ),
+      pickups = Map(
+        FloorNumber(2) -> Set(FloorNumber(3), FloorNumber(4))
+      )
     )
   }
   
@@ -320,43 +334,56 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
 
     //then
     result should be theSameInstanceAs simulator
-    result.status shouldBe simulator.status
   }
 
-  it should "pick person when going Up with same direction" in {
+  it should "simulate example ride" in {
     //given
-    val simulator = ElevatorSimulator(List(
-      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(2)))
-    )).pickup(FloorNumber(1), FloorNumber(3))
-    simulator.status shouldBe List(
-      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2)))
-    )
-    simulator.pickups shouldBe Map(
-      FloorNumber(1) -> Set(FloorNumber(3))
-    )
+    ElevatorSimulator(List(
+      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(2))),
+      (ElevatorId(2), FloorNumber(0), Down, Set(FloorNumber(-2))),
+      (ElevatorId(3), FloorNumber(5), Down, Set.empty),
+      (ElevatorId(4), FloorNumber(-5), Up, Set.empty)
+    ))
+      .pickup(FloorNumber(1), FloorNumber(3))
+      .pickup(FloorNumber(-1), FloorNumber(-3))
+      .assertSimulator(ElevatorSimulator(
+        status = List(
+          (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2))),
+          (ElevatorId(2), FloorNumber(0), Down, Set(FloorNumber(-1), FloorNumber(-2))),
+          (ElevatorId(3), FloorNumber(5), Down, Set.empty),
+          (ElevatorId(4), FloorNumber(-5), Up, Set.empty)
+        ),
+        pickups = Map(
+          FloorNumber(1) -> Set(FloorNumber(3)),
+          FloorNumber(-1) -> Set(FloorNumber(-3))
+        )
+      ))
+
+      //when & then
+      .step()
+      .assertSimulator(ElevatorSimulator(List(
+        (ElevatorId(1), FloorNumber(1), Up, Set(FloorNumber(2), FloorNumber(3))),
+        (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2), FloorNumber(-3))),
+        (ElevatorId(3), FloorNumber(5), Down, Set.empty),
+        (ElevatorId(4), FloorNumber(-5), Up, Set.empty)
+      )))
     
-    //when & then
-    val result1 = simulator.step()
-    result1.status shouldBe List(
-      (ElevatorId(1), FloorNumber(1), Up, Set(FloorNumber(2), FloorNumber(3)))
-    )
-    result1.pickups shouldBe Map.empty
+      //when & then
+      .step()
+      .assertSimulator(ElevatorSimulator(List(
+        (ElevatorId(1), FloorNumber(2), Up, Set(FloorNumber(3))),
+        (ElevatorId(2), FloorNumber(-2), Down, Set(FloorNumber(-3))),
+        (ElevatorId(3), FloorNumber(5), Down, Set.empty),
+        (ElevatorId(4), FloorNumber(-5), Up, Set.empty)
+      )))
     
-    //when & then
-    val result2 = result1.step()
-    result2.status shouldBe List(
-      (ElevatorId(1), FloorNumber(2), Up, Set(FloorNumber(3)))
-    )
-    result2.pickups shouldBe Map.empty
-    
-    //when & then
-    val result3 = result2.step()
-    result3.status shouldBe List(
-      (ElevatorId(1), FloorNumber(3), Up, Set.empty)
-    )
-    result3.pickups shouldBe Map.empty
-    
-    //finish
-    result3.step() should be theSameInstanceAs result3
+      //when & then
+      .step()
+      .assertSimulator(ElevatorSimulator(List(
+        (ElevatorId(1), FloorNumber(3), Up, Set.empty),
+        (ElevatorId(2), FloorNumber(-3), Down, Set.empty),
+        (ElevatorId(3), FloorNumber(5), Down, Set.empty),
+        (ElevatorId(4), FloorNumber(-5), Up, Set.empty)
+      )))
   }
 }

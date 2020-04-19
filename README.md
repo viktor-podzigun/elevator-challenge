@@ -95,7 +95,7 @@ There are few different options, though:
    * the closest to the pickup floor, and
    * going the same direction has a priority
 
-Ofcourse there are many other possible options and optimisations.
+Ofcourse, there are many other possible options and optimisations.
 They are not considered here for the simplicity of the solution.
 
 #### The Solution
@@ -108,3 +108,15 @@ by adding `pickupFloor` to the `goalFloors` of the `closest`
 elevator with giving priority to the elevators going
 the `same direction` as `pickup direction`.
 
+[ElevatorSimulator](src/main/scala/elevator/simulator/ElevatorSimulator.scala) => [tests](src/test/scala/elevator/simulator/ElevatorSimulatorSpec.scala)
+
+#### Example ride
+
+` ` | Pickups | Elevator 1 | Elevator 2
+---|---|---|---
+`initial`  |     | 0 Up (2) | 0 Down (-2)
+`pickup(1, 3)`   | `1` -> (`3`)  | 0 Up (`1`, 2) | 0 Down (-2)
+`pickup(-1, -3)` | 1 -> (3), `-1` -> (`-3`) | 0 Up (1, 2) | 0 Down (`-1`, -2)
+`step()` |  | `1` Up (2, `3`) | `-1` Down (-2, `-3`)
+`step()` |  | `2` Up (3) | `-2` Down (-3)
+`step()` |  | `3` Up | `-3` Down
