@@ -65,8 +65,8 @@ is the following:
 To set initial state - call `ElevatorSimulator` constructor:
 ```scala
 val controlSystem = ElevatorSimulator(List(
-  (ElevatorId(1), FloorNumber(0), Up, List(FloorNumber(1))),
-  (ElevatorId(2), FloorNumber(-1), Down, List(FloorNumber(-2))),
+  (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1))),
+  (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
   ...
 ))
 ```
