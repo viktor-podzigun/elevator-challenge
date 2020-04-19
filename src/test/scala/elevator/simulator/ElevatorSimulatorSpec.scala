@@ -76,6 +76,35 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
     ensureDirection(FloorNumber(-1), Down, Set(FloorNumber(0))) shouldBe Up
   }
 
+  "pickElevator" should "pick closest elevator of same direction" in {
+    //given
+    val status = List(
+      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1))),
+      (ElevatorId(2), FloorNumber(1), Down, Set.empty[FloorNumber]),
+      (ElevatorId(3), FloorNumber(1), Down, Set(FloorNumber(0)))
+    )
+
+    //when
+    val result = pickElevator(status, FloorNumber(2), FloorNumber(3))
+
+    //then
+    result shouldBe ElevatorId(2)
+  }
+
+  it should "pick closest elevator of opposite direction" in {
+    //given
+    val status = List(
+      (ElevatorId(1), FloorNumber(0), Down, Set(FloorNumber(-1))),
+      (ElevatorId(2), FloorNumber(1), Down, Set(FloorNumber(-2)))
+    )
+
+    //when
+    val result = pickElevator(status, FloorNumber(2), FloorNumber(3))
+
+    //then
+    result shouldBe ElevatorId(1)
+  }
+
   "pickup" should "fail if pickupFloor and goalFloor are the same" in {
     //given
     val simulator = ElevatorSimulator(List(
@@ -110,53 +139,34 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
       (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2)))
     )
     result.pickups shouldBe Map(
-      FloorNumber(2) -> FloorNumber(3)
+      FloorNumber(2) -> Set(FloorNumber(3))
     )
   }
   
-  it should "choose closest elevator of same direction" in {
+  it should "add goalFloor to existing pickupFloor" in {
     //given
     val simulator = ElevatorSimulator(List(
-      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1))),
-      (ElevatorId(2), FloorNumber(1), Down, Set.empty),
-      (ElevatorId(3), FloorNumber(1), Down, Set(FloorNumber(0)))
-    ))
-    simulator.pickups shouldBe Map.empty
+      (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
+      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1)))
+    )).pickup(FloorNumber(2), FloorNumber(3))
+    simulator.status shouldBe List(
+      (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
+      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2)))
+    )
+    simulator.pickups shouldBe Map(
+      FloorNumber(2) -> Set(FloorNumber(3))
+    )
     
     //when
-    val result = simulator.pickup(FloorNumber(2), FloorNumber(3))
+    val result = simulator.pickup(FloorNumber(2), FloorNumber(4))
     
     //then
-    result should not be theSameInstanceAs(simulator)
     result.status shouldBe List(
-      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1))),
-      (ElevatorId(2), FloorNumber(1), Down, Set(FloorNumber(2))),
-      (ElevatorId(3), FloorNumber(1), Down, Set(FloorNumber(0)))
+      (ElevatorId(2), FloorNumber(-1), Down, Set(FloorNumber(-2))),
+      (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(1), FloorNumber(2)))
     )
     result.pickups shouldBe Map(
-      FloorNumber(2) -> FloorNumber(3)
-    )
-  }
-  
-  it should "choose closest elevator of opposite direction" in {
-    //given
-    val simulator = ElevatorSimulator(List(
-      (ElevatorId(1), FloorNumber(0), Down, Set(FloorNumber(-1))),
-      (ElevatorId(2), FloorNumber(1), Down, Set(FloorNumber(-2)))
-    ))
-    simulator.pickups shouldBe Map.empty
-    
-    //when
-    val result = simulator.pickup(FloorNumber(2), FloorNumber(3))
-    
-    //then
-    result should not be theSameInstanceAs(simulator)
-    result.status shouldBe List(
-      (ElevatorId(1), FloorNumber(0), Down, Set(FloorNumber(-1), FloorNumber(2))),
-      (ElevatorId(2), FloorNumber(1), Down, Set(FloorNumber(-2)))
-    )
-    result.pickups shouldBe Map(
-      FloorNumber(2) -> FloorNumber(3)
+      FloorNumber(2) -> Set(FloorNumber(3), FloorNumber(4))
     )
   }
   
@@ -248,7 +258,7 @@ class ElevatorSimulatorSpec extends FlatSpec with Matchers {
       (ElevatorId(1), FloorNumber(0), Up, Set(FloorNumber(2), FloorNumber(3)))
     )
     simulator.pickups shouldBe Map(
-      FloorNumber(1) -> FloorNumber(3)
+      FloorNumber(1) -> Set(FloorNumber(3))
     )
     
     //when & then
